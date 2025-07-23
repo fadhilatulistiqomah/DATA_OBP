@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Peta Cuaca Stasiun Meteorologi Bulan Juni</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <style>
+    #map { height: 90vh; }
+    body { font-family: Arial, sans-serif; padding: 10px; margin: 0; }
+    .controls { margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <h3>Peta Cuaca Stasiun Meteorologi Bulan Juni</h3>
+
+  <div class="controls">
+    <label><input type="checkbox" id="toggleHeavyRain" checked> Heavy Rain</label><br>
+    <label><input type="checkbox" id="toggleGale" checked> Gale</label>
+  </div>
+
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+
+  <script>
+    const map = L.map('map').setView([-2.5, 118], 5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const heavyRainLayer = L.layerGroup().addTo(map);
+    const galeLayer = L.layerGroup().addTo(map);
+
+    document.getElementById('toggleHeavyRain').addEventListener('change', function () {
+      if (this.checked) {
+        map.addLayer(heavyRainLayer);
+      } else {
+        map.removeLayer(heavyRainLayer);
+      }
+    });
+
+    document.getElementById('toggleGale').addEventListener('change', function () {
+      if (this.checked) {
+        map.addLayer(galeLayer);
+      } else {
+        map.removeLayer(galeLayer);
+      }
+    });
+
+    const fileURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSH3wMDtBs0lxBAFai-TYTKuSkTPOCdT0IOeF13kIYNPlQflTuband9SWKU9kjuSg/pub?output=csv';
+
+    function convertToDirectLink(url) {
+      const match = url.match(/\/d\/(.*?)\//);
+      if (match) {
+        return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+      }
+      return '';
+    }
+
+    fetch(fileURL)
+      .then(res => res.text())
+      .then(csv => {
+        const parsed = Papa.parse(csv, { header: true });
+        const data = parsed.data;
+
+        data.forEach(st => {
+          if (st.LAT && st.LON) {
+            const lat = parseFloat(st.LAT);
+            const lon = parseFloat(st.LON);
+            const imgLink = convertToDirectLink(st.Link_Windrose || '');
+
+            const popupContent = `
+              <b>${st.NAME}</b><br>
+              <b>${st.wmo_id}</b><br>
+              Curah Hujan: ${st.Curah_Hujan || '-'} mm<br>
+              Heavy Rain: ${st.Heavy_Rain || '-'}<br>
+              Gale: ${st.Gale || '-'}<br>
+              Temperatur: ${st.Temperatur || '-'} °C<br>
+              Tekanan Permukaan: ${st.Tekanan_Permukaan || '-'} hPa<br>
+              ${st.Link_Windrose_Direct ? `<a href="${st.Link_Windrose_Direct}" target="_blank">Lihat Windrose</a>` : 'Windrose: -'}
+            `;
+
+            // Titik semua stasiun
+            L.circleMarker([lat, lon], {
+              radius: 4,
+              color: 'gray',
+              fillColor: 'gray',
+              fillOpacity: 0.6
+            }).addTo(map).bindPopup(popupContent);
+
+            // Layer Heavy Rain
+            const hrValue = parseFloat(st.Heavy_Rain);
+            if (!isNaN(hrValue) && hrValue > 0) {
+              L.circleMarker([lat, lon], {
+                radius: 3 + hrValue, // ukuran proporsional
+                color: 'blue',
+                fillColor: 'blue',
+                fillOpacity: 0.7
+              }).addTo(heavyRainLayer).bindPopup(`<b>${st.NAME}</b><br>Heavy Rain: ${hrValue} hari`);
+            }
+
+            // Layer Gale
+            if (st.Gale && st.Gale.toLowerCase() === 'yes') {
+              L.circleMarker([lat, lon], {
+                radius: 8,
+                color: 'red',
+                fillColor: 'red',
+                fillOpacity: 0.8
+              }).addTo(galeLayer).bindPopup(`<b>${st.NAME}</b><br>Gale: Yes`);
+            }
+          }
+        });
+      });
+  </script>
+</body>
+</html>
