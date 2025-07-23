@@ -74,7 +74,7 @@
 
             // Titik semua stasiun
             L.circleMarker([lat, lon], {
-              radius: 4,
+              radius: 8,
               color: 'gray',
               fillColor: 'gray',
               fillOpacity: 0.6
@@ -85,7 +85,7 @@
             const hrValue = parseFloat(st.Heavy_Rain);
             if (!isNaN(hrValue) && hrValue > 0) {
               L.circleMarker([lat, lon], {
-                radius: 3 + hrValue, // ukuran proporsional
+                radius: 7 + hrValue, // ukuran proporsional
                 color: 'blue',
                 fillColor: 'blue',
                 fillOpacity: 0.7
