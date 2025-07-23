@@ -50,14 +50,6 @@
 
     const fileURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSH3wMDtBs0lxBAFai-TYTKuSkTPOCdT0IOeF13kIYNPlQflTuband9SWKU9kjuSg/pub?output=csv';
 
-    function convertToDirectLink(url) {
-      const match = url.match(/\/d\/(.*?)\//);
-      if (match) {
-        return `https://drive.google.com/uc?export=view&id=${match[1]}`;
-      }
-      return '';
-    }
-
     fetch(fileURL)
       .then(res => res.text())
       .then(csv => {
@@ -68,7 +60,6 @@
           if (st.LAT && st.LON) {
             const lat = parseFloat(st.LAT);
             const lon = parseFloat(st.LON);
-            const imgLink = convertToDirectLink(st.Link_Windrose || '');
 
             const popupContent = `
               <b>${st.NAME}</b><br>
